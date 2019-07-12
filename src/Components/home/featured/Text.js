@@ -126,7 +126,6 @@ class Text extends Component {
     return (
       <div className="featured_text">
         {this.animatePlayer()}
-
         {this.animateNumber()}
         {this.animateFirst()}
         {this.animateSecond()}

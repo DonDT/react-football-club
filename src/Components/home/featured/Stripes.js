@@ -13,7 +13,7 @@ class Stripes extends Component {
         delay: 0
       },
       {
-        background: "#fffff",
+        background: "#ffffff",
         left: 360,
         rotate: 25,
         top: -397,
