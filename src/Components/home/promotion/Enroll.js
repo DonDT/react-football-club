@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Fade from "react-reveal/Fade";
 import FormField from "../../ui/formFields";
 import { validate } from "../../ui/minsc";
+import { firebasePromotions } from "../../../firebase";
 
 class Enroll extends Component {
   state = {
@@ -26,7 +27,59 @@ class Enroll extends Component {
     }
   };
 
-  submitForm() {}
+  resetFormSuccess(type) {
+    const newFormData = { ...this.state.formdata };
+    for (let key in newFormData) {
+      newFormData[key].value = "";
+      newFormData[key].valid = false;
+      newFormData[key].validationMessage = "";
+    }
+
+    this.setState({
+      formError: false,
+      formdata: newFormData,
+      formSuccess: type ? "Congratulations!" : "Already on the database"
+    });
+    this.successMessage();
+  }
+
+  successMessage() {
+    setTimeout(() => {
+      this.setState({
+        formSuccess: ""
+      });
+    }, 2000);
+  }
+
+  submitForm(event) {
+    event.preventDefault();
+
+    let dataToSubmit = {};
+    let formIsValid = true;
+
+    for (let key in this.state.formdata) {
+      dataToSubmit[key] = this.state.formdata[key].value;
+      formIsValid = this.state.formdata[key].valid && formIsValid;
+    }
+    if (formIsValid) {
+      firebasePromotions
+        .orderByChild("email")
+        .equalTo(dataToSubmit.email)
+        .once("value")
+        .then(snapshot => {
+          if (snapshot.val() === null) {
+            firebasePromotions.push(dataToSubmit);
+            this.resetFormSuccess(true);
+          } else {
+            this.resetFormSuccess(false);
+          }
+        });
+    } else {
+      this.setState({
+        formError: true
+      });
+    }
+  }
 
   updateForm(element) {
     const newFormData = { ...this.state.formdata };
@@ -36,13 +89,11 @@ class Enroll extends Component {
     let validData = validate(newElement);
 
     newElement.valid = validData[0];
-    newElement.validationmessage = validData[1];
+    newElement.validationMessage = validData[1];
 
     newFormData[element.id] = newElement;
 
-    console.log(newFormData);
-
-    this.setState({ formdata: newFormData });
+    this.setState({ formError: false, formdata: newFormData });
   }
 
   render() {
@@ -57,6 +108,19 @@ class Enroll extends Component {
                 formdata={this.state.formdata.email}
                 change={element => this.updateForm(element)}
               />
+              {this.state.formError ? (
+                <div className="error_label">
+                  {" "}
+                  Something went wrong, try again
+                </div>
+              ) : null}
+              <div className="success_label">{this.state.formSuccess}</div>
+              <button onClick={event => this.submitForm(event)}>Enroll</button>
+              <div className="enroll_discl">
+                Our Products and services comes as a recommendation and are not
+                intended to be fault free. Also we would treat customer data
+                with high respect and responsibility
+              </div>
             </div>
           </form>
         </div>
