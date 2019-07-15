@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import AdminLayout from "../../../Hoc/AdminLayout";
 import FormField from "../../ui/formFields";
-import { validate } from "@babel/types";
+import { firebaseTeams, firebaseDB, firebaseMatches } from "../../../firebase";
+import { firebaseLooper, validate } from "../../ui/minsc";
 
 class AddEditMatch extends Component {
   state = {
@@ -146,7 +147,7 @@ class AddEditMatch extends Component {
           label: "Game played?",
           name: "select_played",
           type: "select",
-          options: [{ key: "Yes", value: "Yes" }, { key: "N", value: "N" }]
+          options: [{ key: "Yes", value: "Yes" }, { key: "No", value: "No" }]
         },
         validation: {
           required: true
@@ -157,6 +158,131 @@ class AddEditMatch extends Component {
       }
     }
   };
+
+  updateForm(element) {
+    const newFormData = { ...this.state.formdata };
+    const newElement = { ...newFormData[element.id] };
+    newElement.value = element.event.target.value;
+
+    let validData = validate(newElement);
+
+    newElement.valid = validData[0];
+    newElement.validationMessage = validData[1];
+
+    newFormData[element.id] = newElement;
+
+    this.setState({ formError: false, formdata: newFormData });
+  }
+
+  updateFields(match, teamOptions, teams, type, matchId) {
+    const newFormData = {
+      ...this.state.formdata
+    };
+    for (let key in newFormData) {
+      if (match) {
+        newFormData[key].value = match[key];
+        newFormData[key].valid = true;
+      }
+      if (key === "local" || key === "away") {
+        newFormData[key].config.options = teamOptions;
+      }
+    }
+    this.setState({
+      matchId,
+      formType: type,
+      formdata: newFormData,
+      teams
+    });
+  }
+
+  componentDidMount() {
+    const matchId = this.props.match.params.id;
+
+    const getTeams = (match, type) => {
+      firebaseTeams.once("value").then(snapshot => {
+        const teams = firebaseLooper(snapshot);
+
+        const teamOptions = [];
+
+        snapshot.forEach(childSnapshot => {
+          teamOptions.push({
+            key: childSnapshot.val().shortName,
+            value: childSnapshot.val().shortName
+          });
+        });
+        this.updateFields(match, teamOptions, teams, type, matchId);
+      });
+    };
+
+    if (!matchId) {
+      getTeams(false, "Add Match");
+    } else {
+      firebaseDB
+        .ref(`matches/${matchId}`)
+        .once("value")
+        .then(snapshot => {
+          const match = snapshot.val();
+          getTeams(match, "Edit Match");
+        });
+    }
+  }
+
+  successForm(message) {
+    this.setState({
+      formSuccess: message
+    });
+    setTimeout(() => {
+      this.setState({ formSuccess: "" });
+    }, 2000);
+  }
+
+  submitForm(event) {
+    event.preventDefault();
+
+    let dataToSubmit = {};
+    let formIsValid = true;
+
+    for (let key in this.state.formdata) {
+      dataToSubmit[key] = this.state.formdata[key].value;
+      formIsValid = this.state.formdata[key].valid && formIsValid;
+    }
+
+    this.state.teams.forEach(team => {
+      if (team.shortName === dataToSubmit.local) {
+        dataToSubmit["localThmb"] = team.thmb;
+      }
+      if (team.shortName === dataToSubmit.away) {
+        dataToSubmit["awayThmb"] = team.thmb;
+      }
+    });
+
+    if (formIsValid) {
+      if (this.state.formType === "Edit Match") {
+        firebaseDB
+          .ref(`matches/${this.state.matchId}`)
+          .update(dataToSubmit)
+          .then(() => {
+            this.successForm("Updated Correctly");
+          })
+          .catch(e => {
+            this.setState({ formError: true });
+          });
+      } else {
+        firebaseMatches
+          .push(dataToSubmit)
+          .then(() => {
+            this.props.history.push("/admin_matches");
+          })
+          .catch(e => {
+            this.setState({ formError: true });
+          });
+      }
+    } else {
+      this.setState({
+        formError: true
+      });
+    }
+  }
 
   render() {
     return (
@@ -175,7 +301,7 @@ class AddEditMatch extends Component {
                 <div className="wrapper">
                   <div className="left">
                     <FormField
-                      id={"select"}
+                      id={"local"}
                       formdata={this.state.formdata.local}
                       change={element => this.updateForm(element)}
                     />{" "}
