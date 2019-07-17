@@ -90,13 +90,48 @@ class AddEditPlayers extends Component {
     }
   };
 
+  updateFields = (player, playerId, formType, defaultImg) => {
+    const newFormData = { ...this.state.formdata };
+    for (let key in newFormData) {
+      newFormData[key].value = player[key];
+      newFormData[key].valid = true;
+    }
+    this.setState({
+      playerId,
+      defaultImg,
+      formType,
+      formdata: newFormData
+    });
+  };
+
   componentDidMount() {
     const playerId = this.props.match.params.id;
     if (!playerId) {
       //Add player
-      this.setState({ formType: "Add Player" });
+      this.setState({ formType: "Add player" });
     } else {
-      // edit player
+      firebaseDB
+        .ref(`players/${playerId}`)
+        .once("value")
+        .then(snapshot => {
+          const playerData = snapshot.val();
+          firebase
+            .storage()
+            .ref("player")
+            .child(playerData.image)
+            .getDownloadURL()
+            .then(url => {
+              this.updateFields(playerData, playerId, "Edit Player", url);
+            })
+            .catch(e => {
+              this.updateFields(
+                { ...playerData, image: "" },
+                playerId,
+                "Edit player",
+                ""
+              );
+            });
+        });
     }
   }
 
@@ -120,6 +155,17 @@ class AddEditPlayers extends Component {
     this.setState({ formError: false, formdata: newFormData });
   }
 
+  successForm = message => {
+    this.setState({
+      formSuccess: message
+    });
+    setTimeout(() => {
+      this.setState({
+        formSuccess: ""
+      });
+    }, 2000);
+  };
+
   submitForm(event) {
     event.preventDefault();
 
@@ -132,7 +178,19 @@ class AddEditPlayers extends Component {
     }
 
     if (formIsValid) {
-      if (this.state.formType === "Add Player") {
+      if (this.state.formType === "Edit Player") {
+        firebaseDB
+          .ref(`players/${this.state.playerId}`)
+          .update(dataToSubmit)
+          .then(() => {
+            this.successForm("Updated correctly!");
+          })
+          .catch(e => {
+            this.setState({
+              formError: true
+            });
+          });
+      } else {
         firebasePlayers
           .push(dataToSubmit)
           .then(() => {
