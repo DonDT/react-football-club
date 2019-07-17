@@ -40,6 +40,8 @@ class FileUpLoader extends Component {
           fileURL: url
         });
       });
+
+    this.props.filename(filename);
   };
 
   static getDerivedStateFromProps(props, state) {
@@ -51,7 +53,15 @@ class FileUpLoader extends Component {
     }
     return null;
   }
-  handleUploadStart = () => {};
+
+  uploadAgain = () => {
+    this.setState({
+      name: "",
+      isUploading: false,
+      fileURL: ""
+    });
+    this.props.resetImage();
+  };
 
   render() {
     return (
@@ -85,7 +95,13 @@ class FileUpLoader extends Component {
               src={this.state.fileURL}
               alt={this.state.name}
             />
-            <div className="remove" onClick={() => this.uploadAgain()}>
+            <div
+              className="remove"
+              onClick={() => this.uploadAgain()}
+              style={{
+                cursor: "pointer"
+              }}
+            >
               {" "}
               Remove
             </div>
