@@ -12,6 +12,7 @@ import AdminPlayers from "./Components/admin/players/index";
 import AddEditPlayers from "./Components/admin/players/addEditPlayers";
 import TheTeam from "./Components/theTeam";
 import TheMatches from "./Components/theMatches";
+import NotFound from "./Components/ui/not_found";
 
 const Routes = props => {
   return (
@@ -87,6 +88,12 @@ const Routes = props => {
             path="/"
             exact
             component={Home}
+          />
+          <PublicRoute
+            {...props}
+            restricted={false}
+            exact
+            component={NotFound}
           />
         </Switch>
       </Layout>
