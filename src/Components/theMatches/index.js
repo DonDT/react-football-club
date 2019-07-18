@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { CircularProgress } from "@material-ui/core";
+//import { CircularProgress } from "@material-ui/core";
 import { firebaseMatches } from "../../firebase";
 import { firebaseLooper, reverseArray } from "../ui/minsc";
 import LeagueTable from "./table";
