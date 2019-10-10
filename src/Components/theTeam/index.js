@@ -21,7 +21,7 @@ class TheTeam extends Component {
           new Promise((resolve, reject) => {
             firebase
               .storage()
-              .ref("player")
+              .ref("players")
               .child(players[key].image)
               .getDownloadURL()
               .then(url => {
