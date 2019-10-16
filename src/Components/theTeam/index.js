@@ -9,23 +9,24 @@ import { Promise } from "core-js";
 class TheTeam extends Component {
   state = {
     loading: true,
-    players: []
+    player: []
   };
 
   componentDidMount() {
     firebasePlayers.once("value").then(snapshot => {
-      const players = firebaseLooper(snapshot);
+      const player = firebaseLooper(snapshot);
+      console.log("before render", player);
       let promises = [];
-      for (let key in players) {
+      for (let key in player) {
         promises.push(
           new Promise((resolve, reject) => {
             firebase
               .storage()
-              .ref("players")
-              .child(players[key].image)
+              .ref("player")
+              .child(player[key].image)
               .getDownloadURL()
               .then(url => {
-                players[key].url = url;
+                player[key].url = url;
                 resolve();
               });
           })
@@ -34,23 +35,23 @@ class TheTeam extends Component {
       Promise.all(promises).then(() => {
         this.setState({
           loading: false,
-          players
+          player
         });
       });
     });
   }
 
   showplayersByCategory = category =>
-    this.state.players
-      ? this.state.players.map((player, i) => {
-          return player.position === category ? (
+    this.state.player
+      ? this.state.player.map((play, i) => {
+          return play.position === category ? (
             <Fade delay={i * 20} left key={i}>
               <div className="item">
                 <PlayerCard
-                  number={player.number}
-                  name={player.name}
-                  lastname={player.lastname}
-                  bck={player.url}
+                  number={play.number}
+                  name={play.name}
+                  lastname={play.lastname}
+                  bck={play.url}
                 />
               </div>
             </Fade>
@@ -59,6 +60,7 @@ class TheTeam extends Component {
       : null;
 
   render() {
+    console.log(this.state.player);
     return (
       <div
         className="the_team_container"
