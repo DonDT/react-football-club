@@ -41,6 +41,8 @@ class TheTeam extends Component {
     });
   }
 
+  // Have to change the firebase storage to players
+
   showplayersByCategory = category =>
     this.state.player
       ? this.state.player.map((play, i) => {
